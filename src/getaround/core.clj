@@ -71,3 +71,44 @@
        (into [])
        write-to-file))
 
+;; TODO
+;; Every 17.3 seconds, use edmunds API to look up the price of a car
+;; First make up at least one (median age) of each make.
+;; Then one of each make/model. Then fill out all values.
+;; We need the milage of the car, so let's use 12,000 miles per year
+;; eg A model year 2015 car would be 2 years old, and have 24,000 miles on it
+;; Also, need to lookup the zip from the lat-long.
+
+(def makes
+  (->> (json/parse-string (slurp "resources/sfcars.json") clj-keywords)
+       (map :make)
+       set))
+
+;; (count makes) => 34
+
+(def edmunds-api "")
+
+;; TODO: Kind of sucks parsing the string, just to write it to disk
+;; Let's string manipulate that shit and shove the make in there
+(defn get-models
+  [make]
+  (let [raw-results (http/get (str "https://api.edmunds.com/api/vehicle/v2/" make "/models")
+                              {:query-params {"fmt" "json"
+                                              "api_key" edmunds-api}})]
+    (-> raw-results
+        :body
+        (json/parse-string clj-keywords)
+        (assoc :make make))))
+
+(defn persist-models
+  [{:keys [make] :as models}]
+  (json/generate-stream models (clojure.java.io/writer (str "models/" make ".json"))))
+
+(defn get-all-models
+  []
+  (doseq [car (->> cars
+                   (map :make)
+                   set)]
+    (-> car
+        get-models
+        persist-models)))
