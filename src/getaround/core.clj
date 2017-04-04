@@ -79,10 +79,11 @@
 ;; eg A model year 2015 car would be 2 years old, and have 24,000 miles on it
 ;; Also, need to lookup the zip from the lat-long.
 
-(def makes
+#_(def makes
   (->> (json/parse-string (slurp "resources/sfcars.json") clj-keywords)
        (map :make)
        set))
+(def cars nil)
 
 ;; (count makes) => 34
 
